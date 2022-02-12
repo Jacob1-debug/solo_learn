@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+   
+    <title>JOYSTICK</title>
+    <style media="screen">
+      body, div{
+        border: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+
+    </style>
+</head>
+
+<body>
+    <!-- <div id="box" style="height:20px;width:20px;background:#000;"></div> -->
+    <img id="plane" src="https://i.imgur.com/FndAyHx.png" alt="plane sprite" style="width:30px; height:30px;">
+    <script>
+    "use strict";
+      window.onload = () => {
+        controller(document.querySelector('#plane'));
+        let canvas = document.createElement('CANVAS');
+        let ctx = canvas.getContext('2d');
+        document.body.appendChild(canvas);
+        const W = innerWidth;
+        const H = innerHeight;
+        const GAP = 50;
+        canvas.width = W;
+        canvas.height = H;
+        canvas.style.background = "black";
+        //canvas.style.position = "fixed"
+
+        drawMapGrid();
+
+        function drawMapGrid(x = 0, y = 0){
+          x = (x < 0)? (x % W) + H: x;
+          y = (y < 0)? (y % H) + H: y;
+          ctx.clearRect(0, 0, W, H);
+          ctx.beginPath();
+          ctx.lineWidth = 1.0;
+          ctx.strokeStyle="white";
+          for (let i = 0; i < W; i += GAP) {
+              ctx.moveTo((i + x) %  W, 0);
+              ctx.lineTo((i + x) %  W, H);
+          }
+          for (let j = 0; j < H; j += GAP) {
+            ctx.moveTo(0, (j + y) % H);
+            ctx.lineTo(W, (j + y) % H);
+          }
+          ctx.stroke();
+        }
+
+      // };
+      function controller(element) {
+          let canvas = document.createElement('CANVAS');
+          document.body.appendChild(canvas);
+          canvas.style.background = "radial-gradient(deepskyblue, black)";
+          canvas.style.borderRadius = "50%";
+          canvas.style.opacity = "0.6";
+          canvas.style.zIndex = "10";
+          canvas.style.position = "absolute";
+          canvas.style.bottom = "0";
+          canvas.style.right = "0";
+          let cx = canvas.getContext('2d');
+          const W = innerWidth;
+          const H = innerHeight;
+          const CW = 150;
+          const CH = 150;
+          const EW = parseInt(element.style.width);
+          const EH = parseInt(element.style.height);
+          const SPEED = 5;
+          canvas.width = CW;
+          canvas.height = CH;
+
+          //set CSS for the moving element and canvas
+          (function setObject() {
+              element.style.position = 'absolute';
+              element.style.left = `${Math.ceil(W / 2)}px`;
+              element.style.top = `${Math.ceil(H / 2)}px`;
+              element.style.zIndex = "5";
+              //console.log("CSS set");
+          })();
+
+          const controllerXY = {
+              x: 0,
+              y: 0
+          };
+          canvas.addEventListener("touchstart", handleStart, false);
+          canvas.addEventListener("touchend", handleEnd, false);
+          canvas.addEventListener("touchcancel", handleCancel, false);
+          canvas.addEventListener("touchmove", handleMove, false);
+          canvas.addEventListener("mousedown", mouseStart, false);
+          canvas.addEventListener("mouseup", mouseEnd, false);
+          canvas.addEventListener("mouseover", mouseMove, false);
+          let ongoingTouches = [];
+          let interval;
+          let mouseMode = false;
+          let currentX = 0;
+          let currentY = 0;
+
+          function handleStart(evt) {
+              evt.preventDefault();
+              let touches = evt.changedTouches;
+              for (var i = 0; i < touches.length; i++) {
+                  controllerXY.x = (touches[i].pageX - W + CW / 2) / (CW / 2);
+                  controllerXY.y = (touches[i].pageY - H + CH / 2) / (CH / 2);
+              }
+              // console.log(`%c x:${controllerXY.x} Y:${controllerXY.y}`, "color:red;");
+              interval = setInterval(positionElement, 20);
+          }
+
+          function handleEnd(evt) {
+              evt.preventDefault();
+              clearInterval(interval);
+              controllerXY.x = 0;
+              controllerXY.y = 0;
+          }
+
+          function handleCancel(evt) {
+              evt.preventDefault();
+              var touches = evt.changedTouches;
+              clearInterval(interval);
+              for (var i = 0; i < touches.length; i++) {
+                  //var idx = ongoingTouchIndexById(touches[i].identifier);
+                  //ongoingTouches.splice(idx, 1); // remove it; we're done
+              }
+          }
+
+          function handleMove(evt) {
+              //evt.preventDefault();
+              let touches = evt.changedTouches;
+              for (var i = 0; i < touches.length; i++) {
+                  controllerXY.x = (touches[i].pageX - W + CW / 2) / (CW / 2);
+                  controllerXY.y = (touches[i].pageY - H + CH / 2) / (CH / 2);
+              }
+              //console.log(`x:${controllerXY.x} Y:${controllerXY.y}`);
+              positionElement();
+          }
+
+          function mouseStart(evt) {
+              controllerXY.x = (evt.pageX - W + CW / 2) / (CW / 2);
+              controllerXY.y = (evt.pageY - H + CH / 2) / (CH / 2);
+              mouseMode = true;
+              interval = setInterval(positionElement, 20);
+          }
+
+          function mouseEnd() {
+              controllerXY.x = 0;
+              controllerXY.y = 0;
+              mouseMode = false;
+              clearInterval(interval);
+          }
+
+          function mouseMove(evt) {
+              if (mouseMode) {
+                  // clearInterval(interval);
+                  controllerXY.x = (evt.pageX - W + CW / 2) / (CW / 2);
+                  controllerXY.y = (evt.pageY - H + CH / 2) / (CH / 2);
+                  positionElement();
+              }
+          }
+
+          function positionElement() {
+            currentX -= controllerXY.x * SPEED;
+            currentY -= controllerXY.y * SPEED;
+            // console.log(`%c x:${currentX} Y:${currentY}`, "color:yellow;");
+            drawMapGrid(currentX, currentY);
+            rotateElement();
+          }
+
+          function rotateElement(){
+            let angle = Math.round(Math.atan((-controllerXY.x) / controllerXY.y) * (180 / Math.PI));
+            // console.log(angle);
+            if (controllerXY.y < 0) {
+              element.style.transform = `rotate(${angle}deg)`
+            } else {
+              element.style.transform = `rotate(${angle + 180}deg)`
+            }
+
+          }
+      }
+    };
+    </script>
+</body>
+
+</html>
